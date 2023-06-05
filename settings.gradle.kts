@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 rootProject.name = "AutomatedTaskHelper"
 include(":app")
 include(":library")
+include(":library:base")
