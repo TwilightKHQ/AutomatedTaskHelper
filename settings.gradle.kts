@@ -17,3 +17,4 @@ rootProject.name = "AutomatedTaskHelper"
 include(":app")
 include(":library")
 include(":library:base")
+include(":library:operation")
