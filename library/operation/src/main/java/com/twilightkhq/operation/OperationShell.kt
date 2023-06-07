@@ -9,10 +9,13 @@ import java.io.InputStreamReader
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
+/**
+ * 通过协程调用时，需要在 IO 线程下运行
+ */
 object OperationShell {
 
     suspend fun inputTap(coordinatePoint: CoordinatePoint): CommonResult {
-        return execShellCommandWithEmptyResult(arrayListOf(cmdInputTap(coordinatePoint)))
+        return execShellCommandWithEmptyResult(cmdInputTap(coordinatePoint))
     }
 
     suspend fun inputSwipe(pointList: List<CoordinatePoint>, duration: Long): CommonResult {
@@ -37,8 +40,14 @@ object OperationShell {
         return execShellCommandWithEmptyResult(commandList)
     }
 
+    // 必须有 Root 权限
     suspend fun killApp(packageName: String): CommonResult {
-        return execShellCommandWithEmptyResult(arrayListOf("am force-stop $packageName"))
+        return execShellCommandWithEmptyResult("am force-stop $packageName", true)
+    }
+
+    // 必须有 Root 权限
+    suspend fun restartDevice(): CommonResult {
+        return execShellCommandWithEmptyResult("reboot", true)
     }
 
     private fun cmdInputText(text: String): String {
@@ -64,6 +73,12 @@ object OperationShell {
         fromPoint: CoordinatePoint, toPoint: CoordinatePoint, duration: Long
     ): String {
         return "input swipe ${fromPoint.x} ${fromPoint.y} ${toPoint.x} ${toPoint.y} $duration"
+    }
+
+    private suspend fun execShellCommandWithEmptyResult(
+        command: String, needRoot: Boolean = false
+    ): CommonResult {
+        return execShellCommandWithEmptyResult(arrayListOf(command), needRoot)
     }
 
     private suspend fun execShellCommandWithEmptyResult(

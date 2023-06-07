@@ -47,30 +47,33 @@ object OperationManager : OperationInterface {
                     ?: OperationAccessibilityService.serviceNull()
             }
         }
-        XLog.i("Operation=Click result=$result")
+        XLog.i("Operation=Swipe result=$result")
         return result
     }
 
     override suspend fun startApp(context: Context, packageName: String): CommonResult {
         val packageManager: PackageManager = context.packageManager
         val intent = packageManager.getLaunchIntentForPackage(packageName)
-        return intent?.let {
+        val result = intent?.let {
             context.startActivity(it)
             CommonResult(true)
         } ?: CommonResult(
             false, "Params Error", "getLaunchIntentForPackage is null"
         )
+        XLog.i("Operation=StartApp result=$result")
+        return result
     }
 
-    /**
-     * TODO 有问题
-     */
     override suspend fun killApp(packageName: String): CommonResult {
-        return OperationShell.killApp(packageName)
+        val result = OperationShell.killApp(packageName)
+        XLog.i("Operation=KillApp result=$result")
+        return result
     }
 
     override suspend fun restartDevice(): CommonResult {
-        TODO("Not yet implemented")
+        val result = OperationShell.restartDevice()
+        XLog.i("Operation=RestartDevice result=$result")
+        return result
     }
 
     override suspend fun hideMyself(): CoordinatePoint {
