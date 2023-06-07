@@ -11,8 +11,8 @@ data class CoordinatePoint(
  * 某个操作或者任务执行的结果
  */
 data class CommonResult(
-    val isSuccess: Boolean,             // 顺利执行完成
-    val errorType: String = "",         // TODO 后续整理错误类型
-    val errorMsg: String = "",
+    var isSuccess: Boolean,             // 顺利执行完成
+    var errorType: String = "",         // TODO 后续整理错误类型
+    var errorMsg: String = "",
     // 补充内容
 )

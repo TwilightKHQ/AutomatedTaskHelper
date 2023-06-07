@@ -43,4 +43,5 @@ dependencies {
 
     api(project(":library:base"))
     api(project(":library:operation"))
+    api(project(":library:graphic"))
 }
