@@ -77,10 +77,7 @@ class OperationAccessibilityService : AccessibilityService() {
                     override fun onCancelled(gestureDescription: GestureDescription?) {
                         super.onCancelled(gestureDescription)
                         coroutine.resume(
-                            CommonResult(
-                                false, "Cancelled",
-                                "dispatchGesture onCancelled"
-                            )
+                            CommonResult(false, "Cancelled", "dispatchGesture onCancelled")
                         )
                     }
                 }, null)

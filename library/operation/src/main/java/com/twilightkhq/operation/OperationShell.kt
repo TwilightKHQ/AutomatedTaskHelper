@@ -1,7 +1,6 @@
 package com.twilightkhq.operation
 
 import android.text.TextUtils
-import android.util.Log
 import com.twilightkhq.base.CommonResult
 import com.twilightkhq.base.CoordinatePoint
 import java.io.BufferedReader
@@ -10,7 +9,8 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 /**
- * 通过协程调用时，需要在 IO 线程下运行
+ * 1. 通过协程调用时，需要在 IO 线程下运行
+ * 2. Android 13 adb shell input 事件需要INJECT_EVENTS权限，需要system权限
  */
 object OperationShell {
 
@@ -91,24 +91,24 @@ object OperationShell {
                     commandList.add("exit")
                 }
                 val process = Runtime.getRuntime().exec(TextUtils.join("\n", commandList))
-                val reader = BufferedReader(InputStreamReader(process.inputStream))
-                val output = TextUtils.join("\n", reader.readLines())
-                reader.close()
+                val inputReader = BufferedReader(InputStreamReader(process.inputStream))
+                val errorReader = BufferedReader(InputStreamReader(process.errorStream))
+                val inputReaderText = TextUtils.join("\n", inputReader.readLines())
+                val errorReaderText = TextUtils.join("\n", errorReader.readLines())
+                val outputText = "inputStream:$inputReaderText\nerrorStream:$errorReaderText"
+                inputReader.close()
+                errorReader.close()
                 // 处理adb命令的输出
-                Log.d(
-                    "twilight",
-                    "execShellCommand: commandOutput=$output exitCode=${process.exitValue()}"
-                )
-                if (output.isBlank()) {
+                if (inputReaderText.isBlank() && errorReaderText.isBlank()) {
                     coroutine.resume(CommonResult(true))
                 } else {
-                    coroutine.resume(CommonResult(false, "Shell Error", output))
+                    coroutine.resume(
+                        CommonResult(false, "Shell Error", outputText)
+                    )
                 }
             } catch (e: Exception) {
                 coroutine.resume(
-                    CommonResult(
-                        false, "Shell Error", e.message.orEmpty()
-                    )
+                    CommonResult(false, "Shell Error", e.message.orEmpty())
                 )
             }
         }
