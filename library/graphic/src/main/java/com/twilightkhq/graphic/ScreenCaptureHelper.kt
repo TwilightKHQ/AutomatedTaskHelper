@@ -3,6 +3,7 @@ package com.twilightkhq.graphic
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.hardware.display.DisplayManager
@@ -15,9 +16,13 @@ import android.view.WindowManager
 import androidx.activity.result.ActivityResult
 import com.elvishew.xlog.XLog
 import com.twilightkhq.base.CommonResult
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 /**
  *  Android系统高版本需要指定其前台服务才能截屏
@@ -29,6 +34,10 @@ object ScreenCaptureHelper {
     private val cachedImage = AtomicReference<Image>()
     private var mediaProjection: MediaProjection? = null
     private var mediaProjectionManager: MediaProjectionManager? = null
+
+    fun requestPermission(activity: Activity) {
+        activity.startActivity(Intent(activity, ScreenCaptureRequestActivity::class.java))
+    }
 
     fun getMediaProjectionManager(activity: Activity): MediaProjectionManager? {
         if (mediaProjectionManager == null) {
@@ -63,7 +72,9 @@ object ScreenCaptureHelper {
         )
 
         // Set up an OnImageAvailableListener to handle the captured frames
+        // 更新频率和投影帧率相当
         imageReader.setOnImageAvailableListener({ reader ->
+//            Log.d("twilight", "startMediaProjection: update Image")
             cachedImage.getAndSet(null)?.close()
             cachedImage.set(reader.acquireLatestImage())
         }, null)
@@ -76,12 +87,26 @@ object ScreenCaptureHelper {
         mediaProjection?.registerCallback(MediaProjectionStopCallback(), null)
     }
 
-    fun saveScreenCapture(savedPath: String): CommonResult {
-        val latestImage = cachedImage.getAndSet(null)
-        return saveImageToStorage(savedPath, latestImage)
+    /**
+     * 获取截图前需要保证 imageReader 已经初始化
+     */
+    private suspend fun getLatestImage(): Image {
+        return suspendCoroutine { coroutine ->
+            runBlocking {
+                var latestImage: Image? = null
+                while (latestImage == null) {
+                    latestImage = cachedImage.getAndSet(null)
+                    delay(10)
+                }
+                coroutine.resume(latestImage)
+            }
+        }
     }
 
-    private fun saveImageToStorage(savedPath: String, image: Image): CommonResult {
+    private fun saveImageToStorage(savedPath: String, image: Image?): CommonResult {
+        if (image == null) {
+            return CommonResult(false, "ParamsError", "image is null")
+        }
         val result = CommonResult(true)
         var outputStream: FileOutputStream? = null
         try {
@@ -111,11 +136,27 @@ object ScreenCaptureHelper {
         mediaProjection?.stop()
     }
 
-    fun isInitialized() = mediaProjection != null
+    fun isInitialized() = ::imageReader.isInitialized
 
     fun releaseAll() {
         stopMediaProjection()
         cachedImage.getAndSet(null)?.close()
+    }
+
+    suspend fun getScreenCaptureBitmap(): Bitmap? {
+        if (!isInitialized()) return null
+        val latestImage = getLatestImage()
+        val bitmap = ImageUtils().image2Bitmap(latestImage, Bitmap.Config.ARGB_8888)
+        latestImage.close()
+        return bitmap
+    }
+
+    suspend fun saveScreenCapture(savedPath: String): CommonResult {
+        if (!isInitialized()) return CommonResult(
+            false, "NotInit", "imageReader not initialized"
+        )
+        val latestImage = getLatestImage()
+        return saveImageToStorage(savedPath, latestImage)
     }
 
     private class MediaProjectionStopCallback : MediaProjection.Callback() {
