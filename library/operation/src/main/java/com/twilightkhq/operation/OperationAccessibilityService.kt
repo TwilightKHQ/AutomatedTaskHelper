@@ -7,6 +7,7 @@ import android.graphics.Path
 import android.view.accessibility.AccessibilityEvent
 import com.twilightkhq.base.CommonResult
 import com.twilightkhq.base.CoordinatePoint
+import com.twilightkhq.base.ResultErrorType
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -77,13 +78,13 @@ class OperationAccessibilityService : AccessibilityService() {
                     override fun onCancelled(gestureDescription: GestureDescription?) {
                         super.onCancelled(gestureDescription)
                         coroutine.resume(
-                            CommonResult(false, "Cancelled", "dispatchGesture onCancelled")
+                            CommonResult(false, ResultErrorType.ExceptionError, "dispatchGesture onCancelled")
                         )
                     }
                 }, null)
             } catch (e: Exception) {
                 coroutine.resume(
-                    CommonResult(false, "Exception", e.message.orEmpty())
+                    CommonResult(false, ResultErrorType.ExceptionError, e.message.orEmpty())
                 )
             }
         }
@@ -96,7 +97,7 @@ class OperationAccessibilityService : AccessibilityService() {
 
         fun serviceNull(): CommonResult {
             return CommonResult(
-                false, "AccessibilityService",
+                false, ResultErrorType.ExceptionError,
                 "OperationAccessibilityService is null"
             )
         }

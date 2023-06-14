@@ -3,6 +3,7 @@ package com.twilightkhq.operation
 import android.text.TextUtils
 import com.twilightkhq.base.CommonResult
 import com.twilightkhq.base.CoordinatePoint
+import com.twilightkhq.base.ResultErrorType
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import kotlin.coroutines.resume
@@ -21,7 +22,7 @@ object OperationShell {
     suspend fun inputSwipe(pointList: List<CoordinatePoint>, duration: Long): CommonResult {
         val commandList = mutableListOf<String>()
         when (pointList.size) {
-            0 -> return CommonResult(false, "Params Error", "pointList Empty")
+            0 -> return CommonResult(false, ResultErrorType.ParamsError, "pointList Empty")
             1 -> {      // 原地长按
                 val coordinatePoint = pointList[0]
                 commandList.add(cmdInputSwipe(coordinatePoint, coordinatePoint, duration))
@@ -103,12 +104,12 @@ object OperationShell {
                     coroutine.resume(CommonResult(true))
                 } else {
                     coroutine.resume(
-                        CommonResult(false, "Shell Error", outputText)
+                        CommonResult(false, ResultErrorType.ExceptionError, outputText)
                     )
                 }
             } catch (e: Exception) {
                 coroutine.resume(
-                    CommonResult(false, "Shell Error", e.message.orEmpty())
+                    CommonResult(false, ResultErrorType.ExceptionError, e.message.orEmpty())
                 )
             }
         }

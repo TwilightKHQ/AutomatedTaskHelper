@@ -16,6 +16,7 @@ import android.view.WindowManager
 import androidx.activity.result.ActivityResult
 import com.elvishew.xlog.XLog
 import com.twilightkhq.base.CommonResult
+import com.twilightkhq.base.ResultErrorType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -105,7 +106,7 @@ object ScreenCaptureHelper {
 
     private fun saveImageToStorage(savedPath: String, image: Image?): CommonResult {
         if (image == null) {
-            return CommonResult(false, "ParamsError", "image is null")
+            return CommonResult(false, ResultErrorType.ParamsError, "image is null")
         }
         val result = CommonResult(true)
         var outputStream: FileOutputStream? = null
@@ -116,7 +117,7 @@ object ScreenCaptureHelper {
         } catch (e: Exception) {
             result.apply {
                 isSuccess = false
-                errorType = "SaveError"
+                errorType = ResultErrorType.ExceptionError
                 errorMsg = e.message.orEmpty()
             }
             e.printStackTrace()
@@ -153,7 +154,7 @@ object ScreenCaptureHelper {
 
     suspend fun saveScreenCapture(savedPath: String): CommonResult {
         if (!isInitialized()) return CommonResult(
-            false, "NotInit", "imageReader not initialized"
+            false, ResultErrorType.ParamsError, "imageReader not initialized"
         )
         val latestImage = getLatestImage()
         return saveImageToStorage(savedPath, latestImage)
